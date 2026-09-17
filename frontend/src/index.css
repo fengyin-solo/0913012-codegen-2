@@ -119,3 +119,11 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
 }
+
+.bookmark-item:hover {
+  background: #f5f8ff;
+}
+
+.bookmark-item a {
+  font-size: 13px;
+}

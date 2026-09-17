@@ -13,11 +13,13 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { setTool, setMeasurementType, resetViewer, clearMeasurementPoints } from '../store/slices/viewerSlice';
 import { RootState, AppDispatch } from '../store';
+import BookmarkMenu from './BookmarkMenu';
 
 const Toolbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const currentTool = useSelector((state: RootState) => state.viewer.tool);
   const measurementType = useSelector((state: RootState) => state.viewer.measurementType);
+  const currentSeismic = useSelector((state: RootState) => state.seismic.currentSeismic);
 
   const handleReset = () => {
     dispatch(resetViewer());
@@ -63,6 +65,9 @@ const Toolbar: React.FC = () => {
       )}
 
       <Space style={{ marginLeft: 8 }}>
+        {currentSeismic && (
+          <BookmarkMenu seismicId={currentSeismic.id} seismicName={currentSeismic.name} />
+        )}
         <Tooltip title="重置视图">
           <Button icon={<HomeOutlined />} onClick={handleReset} />
         </Tooltip>

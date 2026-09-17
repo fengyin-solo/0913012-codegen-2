@@ -137,3 +137,53 @@ export interface ViewState {
   cameraPosition: [number, number, number];
   cameraTarget: [number, number, number];
 }
+
+export type SliceTypeName = 'inline' | 'crossline' | 'depth';
+
+export interface BookmarkSliceState {
+  visible: boolean;
+  opacity: number;
+}
+
+export interface BookmarkView {
+  cameraPosition: [number, number, number];
+  cameraTarget: [number, number, number];
+  slices: Record<SliceTypeName, BookmarkSliceState>;
+}
+
+export interface ViewBookmark {
+  id: string;
+  seismicId: number;
+  seismicName?: string;
+  name: string;
+  view: BookmarkView;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BookmarkExportDataset {
+  seismicName?: string;
+  bookmarks: ViewBookmark[];
+}
+
+export interface BookmarkExportFile {
+  app: string;
+  kind: 'view-bookmarks';
+  version: number;
+  exportedAt: string;
+  datasets: Record<string, BookmarkExportDataset>;
+}
+
+export type BookmarkStorageErrorType =
+  | 'unavailable'
+  | 'quota'
+  | 'corrupted'
+  | 'cleared'
+  | 'invalid';
+
+export interface BookmarkStorageError {
+  type: BookmarkStorageErrorType;
+  message: string;
+}
+
+export type BookmarkImportStrategy = 'skip' | 'rename' | 'overwrite';

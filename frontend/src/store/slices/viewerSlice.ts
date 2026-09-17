@@ -1,5 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { SliceConfig, VolumeRenderingConfig, Point3D, MeasurementResult } from '../../types';
+import { SliceConfig, VolumeRenderingConfig, Point3D, MeasurementResult, BookmarkView } from '../../types';
+
+interface PendingView {
+  view: BookmarkView;
+  nonce: number;
+}
 
 interface ViewerState {
   slices: {
@@ -17,6 +22,9 @@ interface ViewerState {
   showGrid: boolean;
   zoom: number;
   rotation: [number, number, number];
+  cameraPosition: [number, number, number] | null;
+  cameraTarget: [number, number, number] | null;
+  pendingView: PendingView | null;
 }
 
 const initialState: ViewerState = {
@@ -64,6 +72,9 @@ const initialState: ViewerState = {
   showGrid: true,
   zoom: 1,
   rotation: [0, 0, 0],
+  cameraPosition: null,
+  cameraTarget: null,
+  pendingView: null,
 };
 
 const viewerSlice = createSlice({
@@ -146,7 +157,48 @@ const viewerSlice = createSlice({
     setRotation: (state, action: PayloadAction<[number, number, number]>) => {
       state.rotation = action.payload;
     },
-    resetViewer: () => initialState,
+    setCameraPose: (
+      state,
+      action: PayloadAction<{ position: [number, number, number]; target: [number, number, number] }>
+    ) => {
+      state.cameraPosition = action.payload.position;
+      state.cameraTarget = action.payload.target;
+    },
+    resetCameraPose: (state) => {
+      state.cameraPosition = null;
+      state.cameraTarget = null;
+      state.pendingView = null;
+    },
+    applyBookmarkView: (state, action: PayloadAction<BookmarkView>) => {      (['inline', 'crossline', 'depth'] as const).forEach((sliceType) => {
+        const saved = action.payload.slices[sliceType];
+        if (saved) {
+          state.slices[sliceType].visible = saved.visible;
+          state.slices[sliceType].opacity = saved.opacity;
+        }
+      });
+      state.cameraPosition = [...action.payload.cameraPosition] as [number, number, number];
+      state.cameraTarget = [...action.payload.cameraTarget] as [number, number, number];
+      state.pendingView = {
+        view: action.payload,
+        nonce: (state.pendingView?.nonce ?? 0) + 1,
+      };
+    },
+    resetViewer: (state) => {
+      // 重置视图只还原视图配置与工具状态；相机姿态由相机自身管理，保持原样以免书签状态失效。
+      state.slices.inline = { ...initialState.slices.inline };
+      state.slices.crossline = { ...initialState.slices.crossline };
+      state.slices.depth = { ...initialState.slices.depth };
+      state.volumeRendering = { ...initialState.volumeRendering };
+      state.tool = initialState.tool;
+      state.measurementType = initialState.measurementType;
+      state.measurementPoints = [];
+      state.lastMeasurement = null;
+      state.background = initialState.background;
+      state.showAxes = initialState.showAxes;
+      state.showGrid = initialState.showGrid;
+      state.zoom = initialState.zoom;
+      state.rotation = [...initialState.rotation] as [number, number, number];
+    },
   },
 });
 
@@ -169,6 +221,9 @@ export const {
   setShowGrid,
   setZoom,
   setRotation,
+  setCameraPose,
+  resetCameraPose,
+  applyBookmarkView,
   resetViewer,
 } = viewerSlice.actions;
 export default viewerSlice.reducer;
