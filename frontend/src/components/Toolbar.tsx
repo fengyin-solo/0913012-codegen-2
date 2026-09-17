@@ -1,9 +1,8 @@
 import React from 'react';
-import { Button, Space, Tooltip, Radio } from 'antd';
+import { Button, Space, Tooltip, Radio, Divider } from 'antd';
 import {
   RotateLeftOutlined,
   ZoomInOutlined,
-  ZoomOutOutlined,
   LineChartOutlined,
   EditOutlined,
   SelectOutlined,
@@ -13,11 +12,13 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { setTool, setMeasurementType, resetViewer, clearMeasurementPoints } from '../store/slices/viewerSlice';
 import { RootState, AppDispatch } from '../store';
+import ViewBookmarks from './ViewBookmarks';
 
 const Toolbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const currentTool = useSelector((state: RootState) => state.viewer.tool);
   const measurementType = useSelector((state: RootState) => state.viewer.measurementType);
+  const currentSeismic = useSelector((state: RootState) => state.seismic.currentSeismic);
 
   const handleReset = () => {
     dispatch(resetViewer());
@@ -70,6 +71,12 @@ const Toolbar: React.FC = () => {
           <Tooltip title="清除测量点">
             <Button icon={<ReloadOutlined />} onClick={handleClearMeasurements} />
           </Tooltip>
+        )}
+        {currentSeismic && (
+          <>
+            <Divider type="vertical" />
+            <ViewBookmarks seismicId={currentSeismic.id} />
+          </>
         )}
       </Space>
     </div>

@@ -137,3 +137,51 @@ export interface ViewState {
   cameraPosition: [number, number, number];
   cameraTarget: [number, number, number];
 }
+
+/** 书签保存的切片类型 */
+export type BookmarkSliceType = 'inline' | 'crossline' | 'depth';
+
+/** 书签中记录的相机状态：旋转角度 + 缩放距离 + 观察目标 */
+export interface CameraSnapshot {
+  /** 方位角（绕竖直轴的旋转角度，弧度） */
+  theta: number;
+  /** 极角（与竖直轴的夹角，弧度） */
+  phi: number;
+  /** 相机到观察目标的距离，代表缩放程度 */
+  radius: number;
+  /** 观察目标（旋转中心） */
+  target: [number, number, number];
+}
+
+/** 单个切片在书签中的状态：启用情况、透明度及所在索引 */
+export interface BookmarkSliceState {
+  visible: boolean;
+  opacity: number;
+  index: number;
+}
+
+/** 书签保存的画面内容 */
+export interface BookmarkView {
+  camera: CameraSnapshot;
+  slices: Record<BookmarkSliceType, BookmarkSliceState>;
+}
+
+/** 视图书签 */
+export interface ViewBookmark {
+  id: string;
+  /** 所属地震数据 */
+  seismicId: number;
+  name: string;
+  view: BookmarkView;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** 书签导出文件结构 */
+export interface ViewBookmarkFile {
+  app: string;
+  kind: 'seismic-view-bookmarks';
+  version: number;
+  exportedAt: number;
+  bookmarks: ViewBookmark[];
+}

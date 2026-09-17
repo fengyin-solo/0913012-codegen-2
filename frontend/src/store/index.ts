@@ -3,6 +3,7 @@ import authReducer from './slices/authSlice';
 import projectReducer from './slices/projectSlice';
 import seismicReducer from './slices/seismicSlice';
 import viewerReducer from './slices/viewerSlice';
+import bookmarkReducer from './slices/bookmarkSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     projects: projectReducer,
     seismic: seismicReducer,
     viewer: viewerReducer,
+    bookmarks: bookmarkReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

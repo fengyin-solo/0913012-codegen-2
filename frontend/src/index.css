@@ -39,11 +39,14 @@ body {
 
 .toolbar {
   position: absolute;
-  top: 16px;
+  /* 避开左上角的“返回”面板，防止工具条被遮挡 */
+  top: 64px;
   left: 16px;
   display: flex;
   gap: 8px;
   z-index: 100;
+  max-width: calc(100% - 368px);
+  flex-wrap: wrap;
 }
 
 .status-bar {

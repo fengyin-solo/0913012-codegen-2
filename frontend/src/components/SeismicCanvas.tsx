@@ -3,10 +3,11 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useSelector, useDispatch } from 'react-redux';
-import { SeismicData } from '../types';
+import { SeismicData, CameraSnapshot } from '../types';
 import { RootState, AppDispatch } from '../store';
 import { addMeasurementPoint, setLastMeasurement } from '../store/slices/viewerSlice';
 import { seismicAPI } from '../services/api';
+import { cameraBridge } from '../services/cameraBridge';
 import VolumeRenderer from './VolumeRenderer';
 import SliceRenderer from './SliceRenderer';
 import MeasurementOverlay from './MeasurementOverlay';
@@ -15,6 +16,57 @@ interface SeismicCanvasProps {
   seismicData: SeismicData;
   containerRef: React.RefObject<HTMLDivElement>;
 }
+
+/** 与 OrbitControls 协作所需的最小接口 */
+interface ControllableOrbit {
+  target: THREE.Vector3;
+  update: () => void;
+}
+
+/**
+ * 注册相机与 OrbitControls 到相机桥，使工具条书签可以
+ * 读取当前旋转/缩放，并在切换书签时还原画面。
+ */
+const CameraBridge: React.FC<{ minDistance: number; maxDistance: number }> = ({
+  minDistance,
+  maxDistance,
+}) => {
+  const camera = useThree((state) => state.camera);
+  const controlsRef = useRef<ControllableOrbit | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = cameraBridge.onRestore((snapshot: CameraSnapshot) => {
+      const controls = controlsRef.current;
+      if (!controls) return;
+      controls.target.set(...snapshot.target);
+      const radius = THREE.MathUtils.clamp(snapshot.radius, minDistance, maxDistance);
+      const spherical = new THREE.Spherical(radius, snapshot.phi, snapshot.theta);
+      const offset = new THREE.Vector3().setFromSpherical(spherical);
+      camera.position.copy(controls.target).add(offset);
+      camera.updateProjectionMatrix();
+      controls.update();
+    });
+    return () => {
+      unsubscribe();
+      cameraBridge.unregister(camera);
+    };
+  }, [camera, minDistance, maxDistance]);
+
+  return (
+    <OrbitControls
+      makeDefault
+      enableDamping
+      dampingFactor={0.05}
+      minDistance={minDistance}
+      maxDistance={maxDistance}
+      ref={(instance) => {
+        // drei 的 ref 在挂载/卸载时回调，桥内只保留最小接口
+        controlsRef.current = instance as unknown as ControllableOrbit | null;
+        cameraBridge.register(camera, controlsRef.current);
+      }}
+    />
+  );
+};
 
 const SceneSetup: React.FC<{ seismicData: SeismicData }> = ({ seismicData }) => {
   const background = useSelector((state: RootState) => state.viewer.background);
@@ -165,12 +217,7 @@ const SeismicCanvas: React.FC<SeismicCanvasProps> = ({ seismicData, containerRef
         near={0.1}
         far={maxDim * 10}
       />
-      <OrbitControls
-        enableDamping
-        dampingFactor={0.05}
-        minDistance={maxDim * 0.1}
-        maxDistance={maxDim * 5}
-      />
+      <CameraBridge minDistance={maxDim * 0.1} maxDistance={maxDim * 5} />
       <SceneSetup seismicData={seismicData} />
       <SeismicScene seismicData={seismicData} />
     </Canvas>

@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { SliceConfig, VolumeRenderingConfig, Point3D, MeasurementResult } from '../../types';
+import { SliceConfig, VolumeRenderingConfig, Point3D, MeasurementResult, BookmarkSliceType, BookmarkSliceState } from '../../types';
 
 interface ViewerState {
   slices: {
@@ -146,6 +146,20 @@ const viewerSlice = createSlice({
     setRotation: (state, action: PayloadAction<[number, number, number]>) => {
       state.rotation = action.payload;
     },
+    /** 还原书签中的切片状态（启用/透明度/索引），不影响测量点与工具状态 */
+    applyBookmarkSlices: (
+      state,
+      action: PayloadAction<Partial<Record<BookmarkSliceType, BookmarkSliceState>>>
+    ) => {
+      (Object.keys(action.payload) as BookmarkSliceType[]).forEach((sliceType) => {
+        const saved = action.payload[sliceType];
+        if (!saved) return;
+        const slice = state.slices[sliceType];
+        slice.visible = saved.visible;
+        slice.opacity = saved.opacity;
+        slice.index = saved.index;
+      });
+    },
     resetViewer: () => initialState,
   },
 });
@@ -169,6 +183,7 @@ export const {
   setShowGrid,
   setZoom,
   setRotation,
+  applyBookmarkSlices,
   resetViewer,
 } = viewerSlice.actions;
 export default viewerSlice.reducer;
